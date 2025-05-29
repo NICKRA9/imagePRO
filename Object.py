@@ -1,33 +1,34 @@
 import streamlit as st
 from PIL import Image
-from ultralytics import YOLO
+import requests
+from io import BytesIO
 import numpy as np
-import cv2
+from ultralytics import YOLO
 
-# โหลดโมเดล YOLOv8
+# โหลดโมเดล YOLO
 model = YOLO("yolov8n.pt")
 
-st.title("🔍 ตรวจจับวัตถุในภาพด้วย YOLOv8")
+st.title("🎯 ตรวจจับวัตถุจากลิงก์รูปภาพ")
 
-uploaded_file = st.file_uploader("อัปโหลดภาพ", type=["jpg", "jpeg", "png"])
+# รับ URL จากผู้ใช้
+img_url = st.text_input("ใส่ลิงก์ภาพที่ต้องการตรวจจับวัตถุ", 
+                        value="https://www.hrmagazine.co.uk/media/bgofcr0p/young-people.jpeg")
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="ภาพต้นฉบับ", use_column_width=True)
+if img_url:
+    try:
+        response = requests.get(img_url)
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+        st.image(image, caption="ภาพที่โหลดจาก URL", use_column_width=True)
 
-    # แปลงภาพเป็น numpy array
-    img_array = np.array(image)
+        # ตรวจจับวัตถุ
+        results = model(np.array(image))[0]
+        annotated_img = results.plot()
 
-    # ตรวจจับวัตถุ
-    results = model(img_array)[0]
+        st.image(annotated_img, caption="ภาพพร้อมผลตรวจจับ", use_column_width=True)
 
-    # วาดกรอบผลลัพธ์
-    annotated_img = results.plot()  # คืนค่าภาพพร้อมกล่องตรวจจับ
-
-    st.image(annotated_img, caption="ภาพพร้อมผลตรวจจับ", use_column_width=True)
-
-    # แสดงชื่อวัตถุ
-    detected_classes = set([results.names[int(cls)] for cls in results.boxes.cls])
-    st.write("### วัตถุที่พบในภาพ:")
-    for obj in detected_classes:
-        st.write(f"- {obj}")
+        detected_classes = set([results.names[int(cls)] for cls in results.boxes.cls])
+        st.write("### วัตถุที่พบในภาพ:")
+        for obj in detected_classes:
+            st.write(f"- {obj}")
+    except Exception as e:
+        st.error(f"ไม่สามารถโหลดภาพได้: {e}")
