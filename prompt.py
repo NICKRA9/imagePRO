@@ -4,50 +4,63 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-st.title("Select, Resize (Scale), Rotate Image")
+st.title("Select, Resize (Small/Medium/Large), Rotate Image")
 
-# --- Image options ---
+# Image options
 image_options = {
     "PPTV Image": "https://img.pptvhd36.com/thumbor/2022/01/26/771eebf1b8.jpg",
     "Thairath Image": "https://static.thairath.co.th/media/dFQROr7oWzulq5Fa5K4BG1afANvfhsI0uwEO1wESe3ZeLKGyfPL4Ti6DjFSG9nsKQwF.jpg"
 }
 
-# --- Image selection ---
 selected_image_name = st.selectbox("Choose an image", list(image_options.keys()))
 image_url = image_options[selected_image_name]
 
-# --- Resize and rotate controls ---
-st.subheader("Resize (scale image size)")
-scale = st.slider("Scale (%)", min_value=10, max_value=300, value=100)
+# Mapping size labels to pixel values
+size_mapping = {
+    "Small": 100,
+    "Medium": 500,
+    "Large": 1000
+}
 
+# Select size for width and height separately
+st.subheader("Resize image")
+
+width_label = st.select_slider(
+    "Width",
+    options=["Small", "Medium", "Large"],
+    value="Medium"
+)
+height_label = st.select_slider(
+    "Height",
+    options=["Small", "Medium", "Large"],
+    value="Medium"
+)
+
+new_width = size_mapping[width_label]
+new_height = size_mapping[height_label]
+
+# Rotate slider
 st.subheader("Rotate image")
-rotation_angle = st.slider("Rotation angle (counter-clockwise)", min_value=0, max_value=360, value=0)
+rotation_angle = st.slider("Rotation angle (counter-clockwise)", 0, 360, 0)
 
-# --- Load and process image ---
 try:
     response = requests.get(image_url)
     response.raise_for_status()
     image = Image.open(BytesIO(response.content))
 
-    # Calculate new size using scale
-    width, height = image.size
-    new_width = int(width * scale / 100)
-    new_height = int(height * scale / 100)
-
     # Resize and rotate
     resized_image = image.resize((new_width, new_height))
     rotated_image = resized_image.rotate(rotation_angle, expand=True)
 
-    # Display image with axes, no grid
+    # Display image without grid
     fig, ax = plt.subplots()
     ax.imshow(rotated_image)
-    ax.set_title(f"{selected_image_name} (Rotated {rotation_angle}° | Scaled to {scale}%)")
+    ax.set_title(f"{selected_image_name} | {width_label} x {height_label} | Rotated {rotation_angle}°")
     ax.set_xlabel("X axis (pixels)")
     ax.set_ylabel("Y axis (pixels)")
-    ax.set_xticks([])  # remove tick marks if desired
+    ax.set_xticks([])
     ax.set_yticks([])
-    ax.tick_params(left=False, bottom=False)  # remove axis ticks
-    # Grid removed by not calling ax.grid()
+    ax.tick_params(left=False, bottom=False)
 
     st.pyplot(fig)
 
