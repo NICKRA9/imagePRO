@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-st.title("Select, Resize (Small/Medium/Large), Rotate Image")
+st.title("Select, Resize (Small/Medium/Large) with Size Display, Rotate Image")
 
 # Image options
 image_options = {
@@ -22,19 +22,29 @@ size_mapping = {
     "Large": 1000
 }
 
-# Select size for width and height separately
+# Resize selection with size display
 st.subheader("Resize image")
 
-width_label = st.select_slider(
-    "Width",
-    options=["Small", "Medium", "Large"],
-    value="Medium"
-)
-height_label = st.select_slider(
-    "Height",
-    options=["Small", "Medium", "Large"],
-    value="Medium"
-)
+col1, col2 = st.columns([3, 2])
+
+with col1:
+    width_label = st.select_slider(
+        "Width",
+        options=["Small", "Medium", "Large"],
+        value="Medium"
+    )
+with col2:
+    st.write(f"{size_mapping[width_label]} px")
+
+col3, col4 = st.columns([3, 2])
+with col3:
+    height_label = st.select_slider(
+        "Height",
+        options=["Small", "Medium", "Large"],
+        value="Medium"
+    )
+with col4:
+    st.write(f"{size_mapping[height_label]} px")
 
 new_width = size_mapping[width_label]
 new_height = size_mapping[height_label]
