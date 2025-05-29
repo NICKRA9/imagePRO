@@ -4,51 +4,45 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-st.title("Select, Resize (Custom Size) with Size Display, Rotate Image")
+st.title("Image Blending from URLs")
 
-# Image options
-image_options = {
-    "PPTV Image": "https://img.pptvhd36.com/thumbor/2022/01/26/771eebf1b8.jpg",
-    "Thairath Image": "https://static.thairath.co.th/media/dFQROr7oWzulq5Fa5K4BG1afANvfhsI0uwEO1wESe3ZeLKGyfPL4Ti6DjFSG9nsKQwF.jpg"
-}
+# URLs ของรูปภาพ 2 รูป
+url1 = "https://img.pptvhd36.com/thumbor/2022/01/26/771eebf1b8.jpg"
+url2 = "https://static.thairath.co.th/media/dFQROr7oWzulq5Fa5K4BG1afANvfhsI0uwEO1wESe3ZeLKGyfPL4Ti6DjFSG9nsKQwF.jpg"
 
-selected_image_name = st.selectbox("Choose an image", list(image_options.keys()))
-image_url = image_options[selected_image_name]
-
-# Slider for resizing (width and height equal)
-st.subheader("Resize image")
-
-size_px = st.slider("Image size (Width = Height)", min_value=50, max_value=1500, value=500, step=10)
-
-st.subheader("Rotate image")
-rotation_angle = st.slider("Rotation angle (counter-clockwise)", 0, 360, 0)
+# โหลดรูปภาพจาก URL
+def load_image(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    img = Image.open(BytesIO(response.content)).convert("RGBA")
+    return img
 
 try:
-    response = requests.get(image_url)
-    response.raise_for_status()
-    image = Image.open(BytesIO(response.content))
+    img1 = load_image(url1)
+    img2 = load_image(url2)
 
-    resized_image = image.resize((size_px, size_px))
-    rotated_image = resized_image.rotate(rotation_angle, expand=True)
+    # ปรับขนาดให้เท่ากัน (ใช้ขนาดของ img1)
+    img2 = img2.resize(img1.size)
 
+    # สร้าง canvas ใหม่เพื่อรวมภาพ
+    blended = Image.new("RGBA", img1.size)
+
+    # ใส่ภาพแรกเต็มที่ (alpha=1)
+    blended = Image.alpha_composite(blended, img1)
+
+    # ใส่ภาพที่สองแบบโปร่งใส (alpha=0.5)
+    img2 = img2.copy()
+    alpha = 128  # 0-255 (128 ~ 0.5)
+    img2.putalpha(alpha)
+    blended = Image.alpha_composite(blended, img2)
+
+    # แสดงภาพด้วย matplotlib
     fig, ax = plt.subplots(figsize=(6,6))
-    ax.imshow(rotated_image)
-    ax.set_title(f"{selected_image_name} | Rotated {rotation_angle}°")
-    
-    # Remove axis ticks
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.tick_params(left=False, bottom=False)
-
-    # Add text for image size on top center
-    ax.text(0.5, 1.05, f"Image size: {size_px} x {size_px} pixels", transform=ax.transAxes,
-            ha='center', va='bottom', fontsize=12, color='blue')
-
-    # Add text for image size on bottom center
-    ax.text(0.5, -0.1, f"Image size: {size_px} x {size_px} pixels", transform=ax.transAxes,
-            ha='center', va='top', fontsize=12, color='blue')
+    ax.imshow(blended)
+    ax.axis('off')
+    ax.set_title("Blended Image (50% overlay)")
 
     st.pyplot(fig)
 
 except Exception as e:
-    st.error(f"Failed to load image: {e}")
+    st.error(f"Error loading or blending images: {e}")
