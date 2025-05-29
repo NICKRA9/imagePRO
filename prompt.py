@@ -4,45 +4,45 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-st.title("เลือกภาพ ปรับขนาด หมุน และแสดงแกน X-Y")
+st.title("Select, Resize, Rotate Image and Show Axes")
 
-# --- รายการรูปภาพให้เลือก ---
+# --- Image options ---
 image_options = {
-    "ภาพจาก PPTV": "https://img.pptvhd36.com/thumbor/2022/01/26/771eebf1b8.jpg",
-    "ภาพจาก Thairath": "https://static.thairath.co.th/media/dFQROr7oWzulq5Fa5K4BG1afANvfhsI0uwEO1wESe3ZeLKGyfPL4Ti6DjFSG9nsKQwF.jpg"
+    "PPTV Image": "https://img.pptvhd36.com/thumbor/2022/01/26/771eebf1b8.jpg",
+    "Thairath Image": "https://static.thairath.co.th/media/dFQROr7oWzulq5Fa5K4BG1afANvfhsI0uwEO1wESe3ZeLKGyfPL4Ti6DjFSG9nsKQwF.jpg"
 }
 
-# --- ตัวเลือกให้ผู้ใช้เลือกภาพ ---
-selected_image_name = st.selectbox("เลือกรูปภาพ", list(image_options.keys()))
+# --- Image selection ---
+selected_image_name = st.selectbox("Choose an image", list(image_options.keys()))
 image_url = image_options[selected_image_name]
 
-# --- ปรับขนาดและหมุนด้วย Slider ---
-st.subheader("ขนาดภาพ (พิกเซล)")
-new_width = st.slider("ความกว้าง (แกน X)", 50, 1000, 300)
-new_height = st.slider("ความสูง (แกน Y)", 50, 1000, 300)
+# --- Resize and rotate controls ---
+st.subheader("Resize image")
+new_width = st.slider("Width (X axis, pixels)", min_value=50, max_value=1000, value=300)
+new_height = st.slider("Height (Y axis, pixels)", min_value=50, max_value=1000, value=300)
 
-st.subheader("หมุนภาพ (ทวนเข็มนาฬิกา)")
-rotation_angle = st.slider("องศา", 0, 360, 0)
+st.subheader("Rotate image")
+rotation_angle = st.slider("Rotation angle (counter-clockwise)", min_value=0, max_value=360, value=0)
 
-# --- โหลดและประมวลผลภาพ ---
+# --- Load and process image ---
 try:
     response = requests.get(image_url)
     response.raise_for_status()
     image = Image.open(BytesIO(response.content))
 
-    # ปรับขนาดและหมุนภาพ
+    # Resize and rotate
     resized_image = image.resize((new_width, new_height))
     rotated_image = resized_image.rotate(rotation_angle, expand=True)
 
-    # แสดงภาพพร้อมแกน X/Y ด้วย matplotlib
+    # Display image with axes
     fig, ax = plt.subplots()
     ax.imshow(rotated_image)
-    ax.set_title(f"{selected_image_name} (หมุน {rotation_angle}°)")
-    ax.set_xlabel("แกน X (พิกเซล)")
-    ax.set_ylabel("แกน Y (พิกเซล)")
+    ax.set_title(f"{selected_image_name} (Rotated {rotation_angle}°)")
+    ax.set_xlabel("X axis (pixels)")
+    ax.set_ylabel("Y axis (pixels)")
     ax.grid(True)
 
     st.pyplot(fig)
 
 except Exception as e:
-    st.error(f"ไม่สามารถโหลดภาพได้: {e}")
+    st.error(f"Failed to load image: {e}")
