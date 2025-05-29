@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 from PIL import Image
 from io import BytesIO
+import matplotlib.pyplot as plt
 
-st.title("เลือกภาพ ปรับขนาด และหมุนภาพ")
+st.title("เลือกภาพ ปรับขนาด หมุน และแสดงแกน X-Y")
 
 # --- รายการรูปภาพให้เลือก ---
 image_options = {
@@ -17,8 +18,8 @@ image_url = image_options[selected_image_name]
 
 # --- ปรับขนาดและหมุนด้วย Slider ---
 st.subheader("ขนาดภาพ (พิกเซล)")
-new_width = st.slider("ความกว้าง", 50, 1000, 300)
-new_height = st.slider("ความสูง", 50, 1000, 300)
+new_width = st.slider("ความกว้าง (แกน X)", 50, 1000, 300)
+new_height = st.slider("ความสูง (แกน Y)", 50, 1000, 300)
 
 st.subheader("หมุนภาพ (ทวนเข็มนาฬิกา)")
 rotation_angle = st.slider("องศา", 0, 360, 0)
@@ -29,14 +30,19 @@ try:
     response.raise_for_status()
     image = Image.open(BytesIO(response.content))
 
-    # ปรับขนาด
+    # ปรับขนาดและหมุนภาพ
     resized_image = image.resize((new_width, new_height))
-
-    # หมุนภาพ
     rotated_image = resized_image.rotate(rotation_angle, expand=True)
 
-    # แสดงภาพ
-    st.image(rotated_image, caption=f"{selected_image_name} | {new_width}x{new_height}px | หมุน {rotation_angle}°", use_column_width=False)
+    # แสดงภาพพร้อมแกน X/Y ด้วย matplotlib
+    fig, ax = plt.subplots()
+    ax.imshow(rotated_image)
+    ax.set_title(f"{selected_image_name} (หมุน {rotation_angle}°)")
+    ax.set_xlabel("แกน X (พิกเซล)")
+    ax.set_ylabel("แกน Y (พิกเซล)")
+    ax.grid(True)
+
+    st.pyplot(fig)
 
 except Exception as e:
     st.error(f"ไม่สามารถโหลดภาพได้: {e}")
