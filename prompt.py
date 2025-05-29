@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-st.title("Select, Resize (Small/Medium/Large) with Size Display, Rotate Image")
+st.title("Select, Resize (Custom Size) with Size Display, Rotate Image")
 
 # Image options
 image_options = {
@@ -15,39 +15,14 @@ image_options = {
 selected_image_name = st.selectbox("Choose an image", list(image_options.keys()))
 image_url = image_options[selected_image_name]
 
-# Mapping size labels to pixel values
-size_mapping = {
-    "Small": 100,
-    "Medium": 500,
-    "Large": 1000
-}
-
-# Resize selection with size display
+# Slider for resizing (width and height equal)
 st.subheader("Resize image")
 
-col1, col2 = st.columns([3, 2])
+# Slider for width and height, range 50 to 1500 px
+size_px = st.slider("Image size (Width = Height)", min_value=50, max_value=1500, value=500, step=10)
 
-with col1:
-    width_label = st.select_slider(
-        "Width",
-        options=["Small", "Medium", "Large"],
-        value="Medium"
-    )
-with col2:
-    st.write(f"{size_mapping[width_label]} px")
-
-col3, col4 = st.columns([3, 2])
-with col3:
-    height_label = st.select_slider(
-        "Height",
-        options=["Small", "Medium", "Large"],
-        value="Medium"
-    )
-with col4:
-    st.write(f"{size_mapping[height_label]} px")
-
-new_width = size_mapping[width_label]
-new_height = size_mapping[height_label]
+# Show size above the image
+st.write(f"Current image size: {size_px} x {size_px} pixels")
 
 # Rotate slider
 st.subheader("Rotate image")
@@ -59,13 +34,13 @@ try:
     image = Image.open(BytesIO(response.content))
 
     # Resize and rotate
-    resized_image = image.resize((new_width, new_height))
+    resized_image = image.resize((size_px, size_px))
     rotated_image = resized_image.rotate(rotation_angle, expand=True)
 
     # Display image without grid
     fig, ax = plt.subplots()
     ax.imshow(rotated_image)
-    ax.set_title(f"{selected_image_name} | {width_label} x {height_label} | Rotated {rotation_angle}°")
+    ax.set_title(f"{selected_image_name} | Size: {size_px}x{size_px} | Rotated {rotation_angle}°")
     ax.set_xlabel("X axis (pixels)")
     ax.set_ylabel("Y axis (pixels)")
     ax.set_xticks([])
@@ -73,6 +48,9 @@ try:
     ax.tick_params(left=False, bottom=False)
 
     st.pyplot(fig)
+
+    # Show size below the image as well
+    st.write(f"Current image size: {size_px} x {size_px} pixels")
 
 except Exception as e:
     st.error(f"Failed to load image: {e}")
